@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { Main } from '../loader';
+import Loader from '../loader';
 // @ts-ignore
 import m1 from '../modules/m1/classes/index';
 // @ts-ignore
@@ -7,14 +7,14 @@ import m2 from '../modules/m2/classes/index';
 
 describe('Loader', () => {
   it('should load modules', () => {
-    const main = new Main();
+    const main = new Loader();
     main.addModules([m1, m2]);
     expect(main.modules.length).toBe(2);
     expect(main.modules[0].configs).toEqual(['m1']);
   });
 
   it('should populate fileList', () => {
-    const main = new Main();
+    const main = new Loader();
     main.addModules([m1, m2]);
     expect(main.fileList.size).toBeGreaterThan(0);
     expect(main.fileList.has('config/m1')).toBe(true);
@@ -22,7 +22,7 @@ describe('Loader', () => {
   });
 
   it('should override files from later modules', () => {
-    const main = new Main();
+    const main = new Loader();
     main.addModules([m1, m2]);
     
     const configPath = main.fileList.get('config/m1');
@@ -32,7 +32,7 @@ describe('Loader', () => {
   });
 
   it('should respect order of modules', () => {
-    const main = new Main();
+    const main = new Loader();
     // Add m2 then m1. m1 should override m2.
     main.addModules([m2, m1]);
     

@@ -1,17 +1,22 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, extname } from 'node:path';
 import { readdirSync, statSync } from 'node:fs';
-// @ts-ignore
-import m1 from './modules/m1/classes/index.js';
-// @ts-ignore
-import m2 from './modules/m2/classes/index.js';
 
-export class Main {
+export default class Loader {
   modules: any[] = [];
   fileList = new Map<string, string>();
 
   constructor() {
 
+  }
+
+  async resolveView(viewName: string) {
+    return this.fileList.get(`view/${viewName}`);
+  }
+
+  async resolve(moduleName: string) {
+    const path = this.fileList.get(moduleName);
+    return await import(path!);
   }
 
   addModule(module: any) {
@@ -50,12 +55,4 @@ export class Main {
   addModules(modules: any[]) {
     modules.forEach(m => this.addModule(m));
   }
-}
-
-if (import.meta.main) {
-  const main = new Main()
-  main.addModules([m1, m2]);
-
-  console.log(main.modules);
-  console.log(main.fileList);
 }
