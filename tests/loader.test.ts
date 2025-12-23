@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'bun:test';
-import { Main } from './loader';
+import { Main } from '../loader';
 // @ts-ignore
-import m1 from './modules/m1/classes/index.js';
+import m1 from '../modules/m1/classes/index';
 // @ts-ignore
-import m2 from './modules/m2/classes/index.js';
+import m2 from '../modules/m2/classes/index';
 
 describe('Loader', () => {
   it('should load modules', () => {
@@ -28,7 +28,7 @@ describe('Loader', () => {
     const configPath = main.fileList.get('config/m1');
     // m2 should override m1
     // We check if the path contains 'modules/m2'
-    expect(configPath).toContain('modules/m2');
+    expect(configPath?.replace(/\\/g, '/')).toContain('modules/m2');
   });
 
   it('should respect order of modules', () => {
@@ -37,6 +37,6 @@ describe('Loader', () => {
     main.addModules([m2, m1]);
     
     const configPath = main.fileList.get('config/m1');
-    expect(configPath).toContain('modules/m1');
+    expect(configPath?.replace(/\\/g, '/')).toContain('modules/m1');
   });
 });
