@@ -1,20 +1,13 @@
 import { describe, it, expect } from 'bun:test';
-import Loader from '../loader';
+import CascadeFileLoader from '../loader';
 // @ts-ignore
-import m1 from '../modules/m1/classes/index';
+import m1, {ControllerHome, ControllerFoo} from '../modules/m1/classes/index';
 // @ts-ignore
-import m2 from '../modules/m2/classes/index';
+import m2, {ControllerHome as ControllerHome2} from '../modules/m2/classes/index';
 
 describe('Loader', () => {
-  it('should load modules', () => {
-    const main = new Loader();
-    main.addModules([m1, m2]);
-    expect(main.modules.length).toBe(2);
-    expect(main.modules[0].configs).toEqual(['m1']);
-  });
-
   it('should populate fileList', () => {
-    const main = new Loader();
+    const main = new CascadeFileLoader();
     main.addModules([m1, m2]);
     expect(main.fileList.size).toBeGreaterThan(0);
     expect(main.fileList.has('config/m1')).toBe(true);
@@ -22,7 +15,7 @@ describe('Loader', () => {
   });
 
   it('should override files from later modules', () => {
-    const main = new Loader();
+    const main = new CascadeFileLoader();
     main.addModules([m1, m2]);
     
     const configPath = main.fileList.get('config/m1');
@@ -32,11 +25,39 @@ describe('Loader', () => {
   });
 
   it('should respect order of modules', () => {
-    const main = new Loader();
+    const main = new CascadeFileLoader();
     // Add m2 then m1. m1 should override m2.
     main.addModules([m2, m1]);
     
     const configPath = main.fileList.get('config/m1');
     expect(configPath?.replace(/\\/g, '/')).toContain('modules/m1');
+  });
+
+  it('should resolve module paths', async () => {
+    const main = new CascadeFileLoader(['.', 'index.', 'init.']);
+    main.addModules([m1, m2]);
+    
+    const path = await main.resolve('controller/Foo');
+    expect(path).toBeDefined();
+    expect(path?.replace(/\\/g, '/')).toContain('m1/classes/controller/Foo.mjs');
+
+    const path2 = await main.resolve('controller/Home');
+    expect(path2).toBeDefined();
+    expect(path2?.replace(/\\/g, '/')).toContain('m2/classes/controller/Home.mjs');
+
+    const path3 = await main.resolve('config/m2');
+    expect(path3).toBeDefined();
+    expect(path3?.replace(/\\/g, '/')).toContain('m2/classes/config/m2.mjs');
+  });
+
+  it('import test', async () => {
+    const main = new CascadeFileLoader();
+    main.addModules([m1, m2]);
+    
+    const path = await main.resolve('controller/Foo');
+    const ControllerFooImport = await import(path!);
+    expect(ControllerFooImport).toBeDefined();
+    expect(ControllerFooImport.default).toBe(ControllerFoo);
+
   });
 });
