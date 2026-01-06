@@ -34,7 +34,9 @@ describe('Loader', () => {
   });
 
   it('should resolve module paths', async () => {
-    const main = new CascadeFileLoader(['.', 'index.', 'init.']);
+    const main = new CascadeFileLoader({
+      ignoreList: [/^\./, /^index\./, /^init\./]
+    });
     main.addModules([m1, m2]);
     
     const path = await main.resolve('controller/Foo');
@@ -48,6 +50,26 @@ describe('Loader', () => {
     const path3 = await main.resolve('config/m2');
     expect(path3).toBeDefined();
     expect(path3?.replace(/\\/g, '/')).toContain('m2/classes/config/m2.mjs');
+  });
+
+  it('test ignore index and init files', async () => {
+    const main = new CascadeFileLoader();
+    main.addModules([m1, m2]);
+    
+    // index and init files should NOT be ignored when ignoreList is empty
+    const path = await main.resolve('index');
+    expect(path).toBeDefined();
+    expect(path?.replace(/\\/g, '/')).toContain('m2/classes/index.js');
+
+    const main2 = new CascadeFileLoader({
+      ignoreList: [/^\./, /^index\./, /^init\./]
+    });
+    main2.addModules([m1, m2]);
+
+    // index and init files should be ignored
+    const path2 = await main2.resolve('index');
+    expect(path2).toBeUndefined();
+
   });
 
   it('import test', async () => {

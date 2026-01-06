@@ -2,35 +2,19 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, extname } from 'node:path';
 import { readdirSync, statSync } from 'node:fs';
 
+interface LoaderOptions {
+  ignoreList?: RegExp[];
+  pathHandler?: (path: string) => string;
+}
+
 export default class CascadeFileLoader {
   public fileList = new Map<string, string>();
   private ignoreList: RegExp[];
+  private pathHandler?: (path: string) => string;
 
-  constructor(ignoreList: RegExp[] = [/^(index|init)\./]) {
-    this.ignoreList = ignoreList;
-  }
-
-  resolve(moduleName: string) {
-    return this.fileList.get(moduleName);
-  }
-
-  addModule(module: any) {
-    if(!module) return;
-    const m = module.default || module;
-    if (!m.filename)return;
-
-    const path = dirname(fileURLToPath(m.filename));
-
-    const classesPath = join(path, 'classes');
-    try {
-        if(statSync(classesPath).isDirectory()){
-            this.scanDir(classesPath);
-        } else {
-            this.scanDir(path);
-        }
-    } catch(e) {
-        this.scanDir(path);
-    }
+  constructor(options?: LoaderOptions) {
+    this.ignoreList = options?.ignoreList || [];
+    this.pathHandler = options?.pathHandler || ((path) => path);
   }
 
   private scanDir(basePath: string, currentPath: string = "") {
@@ -44,9 +28,7 @@ export default class CascadeFileLoader {
           if (stat.isDirectory()) {
             this.scanDir(basePath, fullPath);
           } else {
-            for (const ignore of this.ignoreList) {
-              if (ignore.test(file))continue;
-            }
+          if (this.ignoreList.some(ignore => ignore.test(file))) continue;
 
           const ext = extname(file);
           const relativePath = relative(basePath, fullPath);
@@ -58,6 +40,20 @@ export default class CascadeFileLoader {
     } catch (e) {
       console.log(`Error scanning directory ${currentPath}:`, e);
     }
+  }
+
+  resolve(moduleName: string) {
+    return this.fileList.get(moduleName);
+  }
+
+  addModule(module: any) {
+    if(!module) return;
+    const m = module.default || module;
+    if (!m.filename)return;
+
+    const path = dirname(fileURLToPath(m.filename));
+    const targetPath = this.pathHandler ? this.pathHandler(path) : path;
+    this.scanDir(targetPath);
   }
 
   addModules(modules: any[]) {
