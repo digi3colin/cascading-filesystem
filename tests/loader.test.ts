@@ -39,15 +39,15 @@ describe('Loader', () => {
     });
     main.addModules([m1, m2]);
     
-    const path = await main.resolve('controller/Foo');
+    const path = main.resolve('controller/Foo');
     expect(path).toBeDefined();
     expect(path?.replace(/\\/g, '/')).toContain('m1/classes/controller/Foo.mjs');
 
-    const path2 = await main.resolve('controller/Home');
+    const path2 = main.resolve('controller/Home');
     expect(path2).toBeDefined();
     expect(path2?.replace(/\\/g, '/')).toContain('m2/classes/controller/Home.mjs');
 
-    const path3 = await main.resolve('config/m2');
+    const path3 = main.resolve('config/m2');
     expect(path3).toBeDefined();
     expect(path3?.replace(/\\/g, '/')).toContain('m2/classes/config/m2.mjs');
   });
@@ -57,7 +57,7 @@ describe('Loader', () => {
     main.addModules([m1, m2]);
     
     // index and init files should NOT be ignored when ignoreList is empty
-    const path = await main.resolve('index');
+    const path = main.resolve('index');
     expect(path).toBeDefined();
     expect(path?.replace(/\\/g, '/')).toContain('m2/classes/index.js');
 
@@ -67,7 +67,7 @@ describe('Loader', () => {
     main2.addModules([m1, m2]);
 
     // index and init files should be ignored
-    const path2 = await main2.resolve('index');
+    const path2 = main2.resolve('index');
     expect(path2).toBeUndefined();
 
   });
@@ -76,10 +76,26 @@ describe('Loader', () => {
     const main = new CascadeFileLoader();
     main.addModules([m1, m2]);
     
-    const path = await main.resolve('controller/Foo');
+    const path = main.resolve('controller/Foo');
     const ControllerFooImport = await import(path!);
     expect(ControllerFooImport).toBeDefined();
     expect(ControllerFooImport.default).toBe(ControllerFoo);
 
   });
+
+  it('view test', async () => {
+    const main = new CascadeFileLoader({
+      pathHandler: (path) => path+'/../views'
+    });
+    main.addModules([m1, m2]);
+    
+    const path = main.resolve('templates/index');
+    console.log('Resolved view path:', path);
+    const viewContent = await Bun.file(path!).text();
+    const viewJson = JSON.parse(viewContent);
+    expect(viewJson).toBeDefined();
+    expect(viewJson.foo).toBe('bar');
+    
+  });
+
 });

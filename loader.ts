@@ -37,8 +37,10 @@ export default class CascadeFileLoader {
           this.fileList.set(key, fullPath);
         }
       }
-    } catch (e) {
-      console.log(`Error scanning directory ${currentPath}:`, e);
+    } catch (e: any) {
+      if (e.code !== 'ENOENT') {
+        console.log(`Error scanning directory ${currentPath}:`, e);
+      }
     }
   }
 
